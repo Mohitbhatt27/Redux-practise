@@ -1,4 +1,4 @@
-import { createStore } from "redux";
+import { createStore, bindActionCreators } from "redux";
 
 function demoReducer(state, action) {
   if (action.type === "add_item") {
@@ -15,17 +15,20 @@ const add_item = (name, quantity) => {
   };
 };
 
+//binding events actions using bindActionCreators
+
 const initialState = [{ name: "first item" }, { name: "second item" }];
 
 const store = createStore(demoReducer, initialState);
+
 store.subscribe(() => {
   console.log(store.getState());
   console.log("store changed");
-})
+});
 
-store.dispatch(add_item("third item", 3));
-store.dispatch(add_item("fourth item"));
-store.dispatch(add_item("first item", 5));
-store.dispatch({type: 'unknown'});
+const actions = bindActionCreators({ add_item }, store.dispatch);
 
-
+actions.add_item(add_item("third item", 3));
+actions.add_item(add_item("fourth item"));
+actions.add_item(add_item("first item", 5));
+actions.add_item({ type: "unknown" });
