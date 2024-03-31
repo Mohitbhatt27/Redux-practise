@@ -1,76 +1,106 @@
-import { createStore } from "redux";
-
-const initialState = {
-  users: [
-    {
-      id: 1,
-      name: "John",
-    },
-
-    {
-      id: 2,
-      name: "Jane",
-    },
-
-    {
-      id: 3,
-      name: "Jim",
-    },
-  ],
-  todos: [
-    { userID: 1, todoId: 1, text: "complete deployment" },
-    { userID: 1, todoId: 2, text: "raise the bug" },
-    { userID: 2, todoId: 1, text: "complete ppt." },
-    { userID: 2, todoId: 2, text: "take interview" },
-    { userID: 3, todoId: 1, text: "plan the sprint" },
-  ],
-};
-
-// function reducer (state, action) {
-//   if (action.type == "EDIT_TODO") {
-//     return {
-//       ...state,
-//       todos: state.todos.map((todo) => {
-//         if (todo.todoId == action.todoId) {
-//           return {
-//             ...todo,
-//             text: action.text,
-//           };
-//         }
-//         return todo;
-//       }),
-//     };
-//   }
-// }
-
-function reducer1(state, action) {
-  if (action.type === "EDIT_TODO") {
-    return {
-      ...state,
-      todos: state.todos.map((todo) => {
-        if (todo.todoId === action.todoId && todo.userID === action.userID) {
-          return {
-            ...todo,
-            text: action.text,
-          };
+import { createStore, combineReducers, applyMiddleware } from 'redux';
+const state = {
+    users: [
+        {
+            id: 1, 
+            name: 'Sanket',
+        },
+        {
+            id: 2, 
+            name: 'Sarthak',
+        },
+        {
+            id: 3, 
+            name: 'JD',
         }
-        return todo;
-      }),
-    };
+    ],
+    todos: [
+        {
+            userId: 1,
+            todoId: 1, 
+            name: 'complete deployment'
+        },
+        {
+            userId: 1,
+            todoId: 2, 
+            name: 'raise the bug'
+        },
+        {
+            userId: 3,
+            todoId: 1, 
+            name: 'plan the sprint'
+        },
+        {
+            userId: 2,
+            todoId: 1, 
+            name: 'complete ppt'
+        },
+        {
+            userId: 2,
+            todoId: 2, 
+            name: 'take interview'
+        }
+    ]
+}
+
+function logger1({ getState }) {
+    return next => action => {
+      console.log('will dispatch from logger 1', action)
+  
+      // Call the next dispatch method in the middleware chain.
+      const returnValue = next(action)
+  
+      console.log('state after dispatch from logger 1', returnValue, getState())
+  
+      // This will likely be the action itself, unless
+      // a middleware further in chain changed it.
+      return returnValue
+    }
   }
-  return state; // Ensure to return state for unchanged actions
+
+  function logger2({getState, dispatch}) { 
+    return function (next) {
+        return function (action) {
+            // action we dispatched
+            console.log("My impl", action, getState());
+            const response = next(action);
+            console.log("response", response, getState());
+
+            return 10;
+        }
+    }
+  }
+
+const ADD_USER = 'ADD_USER';
+const EDIT_TODO = 'EDIT_TODO';
+function userReducer(users = state.users, action) {
+    if(action.type == ADD_USER) {
+        let newUser = { id: action.userId, name: action.userName };
+        let newUsers = [ ...users, newUser] ;
+        return newUsers;
+    }
+    return users;
+}
+
+function todoReducer(todos = state.todos, action) {
+    if(action.type == EDIT_TODO) {
+        let newTodos = todos.map(todo => {
+            if(todo.todoId == action.todoId && todo.userId == action.userId) {
+                todo.name = action.name;
+            }
+            return todo;
+        });
+        return newTodos;
+    }
+    return todos;
 }
 
 
-const store = createStore(reducer1, initialState);
 
-store.subscribe(() => {});
+const combinedReducer = combineReducers({users: userReducer, todos: todoReducer});
+const store = createStore(combinedReducer, {}, applyMiddleware(logger1, logger2));
 
-store.dispatch({
-  type: "EDIT_TODO",
-  userID: 1,
-  todoId: 1,
-  text: "complete deployment in 2 days",
-});
 
-console.log(store.getState());
+
+store.dispatch({type: ADD_USER, userId: 5, userName: 'Tanmay'});
+
